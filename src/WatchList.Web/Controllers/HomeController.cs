@@ -1,24 +1,24 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using WatchList.Web.Data;
 using WatchList.Web.Models;
 
 namespace WatchList.Web.Controllers;
 public class HomeController : Controller
 {
-    private readonly ILogger<HomeController> _logger;
+    private readonly WatchListDataContext _context;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(WatchListDataContext context)
     {
-        _logger = logger;
+        _context = context;
     }
 
     public IActionResult Index()
     {
-        return View();
-    }
+        ViewData["MoviesCount"] = _context.Movie.Count();
+        ViewData["TvShowsCount"] = _context.TvShow.Count();
+        ViewData["TheatricalPerformancesCount"] = _context.TheatricalPerformance.Count();
 
-    public IActionResult Privacy()
-    {
         return View();
     }
 
