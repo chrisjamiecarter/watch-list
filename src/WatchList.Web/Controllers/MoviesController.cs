@@ -26,25 +26,6 @@ namespace WatchList.Web.Controllers
             return View(await watchListDataContext.ToListAsync());
         }
 
-        // GET: Movies/Details/5
-        public async Task<IActionResult> Details(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var movie = await _context.Movie
-                .Include(m => m.Rating)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (movie == null)
-            {
-                return NotFound();
-            }
-
-            return View(movie);
-        }
-
         // GET: Movies/Create
         public IActionResult Create()
         {

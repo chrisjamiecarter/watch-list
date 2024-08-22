@@ -26,25 +26,6 @@ namespace WatchList.Web.Controllers
             return View(await watchListDataContext.ToListAsync());
         }
 
-        // GET: TvShows/Details/5
-        public async Task<IActionResult> Details(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var tvShow = await _context.TvShow
-                .Include(t => t.Rating)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (tvShow == null)
-            {
-                return NotFound();
-            }
-
-            return View(tvShow);
-        }
-
         // GET: TvShows/Create
         public IActionResult Create()
         {

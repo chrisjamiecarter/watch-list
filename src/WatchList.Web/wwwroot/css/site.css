@@ -20,3 +20,12 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.header-logo {
+  width: 5rem;
+  height: 5rem;
+  overflow: hidden;
+  margin-right: 1.5rem;
+  border-radius: 50%;
+  /*background: var(--celadon);*/
+}
