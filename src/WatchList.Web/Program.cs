@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WatchList.Web.Data;
+using WatchList.Web.Models;
 namespace WatchList.Web;
 
 public class Program
@@ -15,6 +16,11 @@ public class Program
         builder.Services.AddControllersWithViews();
 
         var app = builder.Build();
+
+        // Seed the database.
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        SeedData.Initialise(services);
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())

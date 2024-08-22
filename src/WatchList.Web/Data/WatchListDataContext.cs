@@ -19,17 +19,17 @@ namespace WatchList.Web.Data
         public DbSet<TvShow> TvShow { get; set; } = default!;
         public DbSet<TheatricalPerformance> TheatricalPerformance { get; set; } = default!;
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Rating>().HasData(
-                new Rating { Id = 1, Name = "Awful"},
-                new Rating { Id = 2, Name = "Disappointing" },
-                new Rating { Id = 3, Name = "Good" },
-                new Rating { Id = 4, Name = "Great" },
-                new Rating { Id = 5, Name = "Excellent" }
-                );
+        //protected override void OnModelCreating(ModelBuilder modelBuilder)
+        //{
+        //    modelBuilder.Entity<Rating>().HasData(
+        //        new Rating { Id = 1, Name = "Awful"},
+        //        new Rating { Id = 2, Name = "Disappointing" },
+        //        new Rating { Id = 3, Name = "Good" },
+        //        new Rating { Id = 4, Name = "Great" },
+        //        new Rating { Id = 5, Name = "Excellent" }
+        //        );
 
-            base.OnModelCreating(modelBuilder);
-        }
+        //    base.OnModelCreating(modelBuilder);
+        //}
     }
 }

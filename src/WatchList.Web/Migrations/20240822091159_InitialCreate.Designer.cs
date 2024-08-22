@@ -12,7 +12,7 @@ using WatchList.Web.Data;
 namespace WatchList.Web.Migrations
 {
     [DbContext(typeof(WatchListDataContext))]
-    [Migration("20240821192858_InitialCreate")]
+    [Migration("20240822091159_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -63,33 +63,6 @@ namespace WatchList.Web.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Rating");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Awful"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Disappointing"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Good"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Great"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Excellent"
-                        });
                 });
 
             modelBuilder.Entity("WatchList.Web.Models.TheatricalPerformance", b =>

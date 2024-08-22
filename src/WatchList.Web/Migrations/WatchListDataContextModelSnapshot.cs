@@ -60,33 +60,6 @@ namespace WatchList.Web.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Rating");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Awful"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Disappointing"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Good"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Great"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Excellent"
-                        });
                 });
 
             modelBuilder.Entity("WatchList.Web.Models.TheatricalPerformance", b =>

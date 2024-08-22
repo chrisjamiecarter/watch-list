@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace WatchList.Web.Migrations
 {
     /// <inheritdoc />
@@ -84,18 +82,6 @@ namespace WatchList.Web.Migrations
                         principalTable: "Rating",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.InsertData(
-                table: "Rating",
-                columns: new[] { "Id", "Name" },
-                values: new object[,]
-                {
-                    { 1, "Awful" },
-                    { 2, "Disappointing" },
-                    { 3, "Good" },
-                    { 4, "Great" },
-                    { 5, "Excellent" }
                 });
 
             migrationBuilder.CreateIndex(
