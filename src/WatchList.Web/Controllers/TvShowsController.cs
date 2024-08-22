@@ -1,146 +1,164 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WatchList.Web.Data;
 using WatchList.Web.Models;
 
-namespace WatchList.Web.Controllers
+namespace WatchList.Web.Controllers;
+
+public class TvShowsController : Controller
 {
-    public class TvShowsController : Controller
+    private readonly WatchListDataContext _context;
+
+    public TvShowsController(WatchListDataContext context)
     {
-        private readonly WatchListDataContext _context;
+        _context = context;
+    }
 
-        public TvShowsController(WatchListDataContext context)
+    // GET: TvShows
+    public async Task<IActionResult> Index(int rating, string searchString)
+    {
+        if (_context.TvShow is null)
         {
-            _context = context;
+            return Problem($"Entity set '{nameof(_context.TvShow)}' is null.");
         }
 
-        // GET: TvShows
-        public async Task<IActionResult> Index()
+        var ratings = _context.Rating.AsQueryable();
+        var tvShows = _context.TvShow.AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchString))
         {
-            var watchListDataContext = _context.TvShow.Include(t => t.Rating);
-            return View(await watchListDataContext.ToListAsync());
+            tvShows = tvShows.Where(s => s.Title.ToLower().Contains(searchString.ToLower()));
         }
 
-        // GET: TvShows/Create
-        public IActionResult Create()
+        if (rating > 0)
         {
-            ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name");
-            return View();
+            tvShows = tvShows.Where(r => r.Rating!.Id == rating);
         }
 
-        // POST: TvShows/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,WatchDate,RatingId")] TvShow tvShow)
+        var model = new TvShowView
         {
-            if (ModelState.IsValid)
-            {
-                tvShow.Id = Guid.NewGuid();
-                _context.Add(tvShow);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
-            return View(tvShow);
-        }
+            TvShows = await tvShows.ToListAsync(),
+            Ratings = new SelectList(await ratings.OrderBy(o => o.Id).ToListAsync(), "Id", "Name")
+        };
 
-        // GET: TvShows/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
+        return View(model);
+    }
+
+    // GET: TvShows/Create
+    public IActionResult Create()
+    {
+        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name");
+        return View();
+    }
+
+    // POST: TvShows/Create
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create([Bind("Id,Title,WatchDate,RatingId")] TvShow tvShow)
+    {
+        if (ModelState.IsValid)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var tvShow = await _context.TvShow.FindAsync(id);
-            if (tvShow == null)
-            {
-                return NotFound();
-            }
-            ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
-            return View(tvShow);
-        }
-
-        // POST: TvShows/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,WatchDate,RatingId")] TvShow tvShow)
-        {
-            if (id != tvShow.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(tvShow);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TvShowExists(tvShow.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
-            return View(tvShow);
-        }
-
-        // GET: TvShows/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var tvShow = await _context.TvShow
-                .Include(t => t.Rating)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (tvShow == null)
-            {
-                return NotFound();
-            }
-
-            return View(tvShow);
-        }
-
-        // POST: TvShows/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
-        {
-            var tvShow = await _context.TvShow.FindAsync(id);
-            if (tvShow != null)
-            {
-                _context.TvShow.Remove(tvShow);
-            }
-
+            tvShow.Id = Guid.NewGuid();
+            _context.Add(tvShow);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
+        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
+        return View(tvShow);
+    }
 
-        private bool TvShowExists(Guid id)
+    // GET: TvShows/Edit/5
+    public async Task<IActionResult> Edit(Guid? id)
+    {
+        if (id == null)
         {
-            return _context.TvShow.Any(e => e.Id == id);
+            return NotFound();
         }
+
+        var tvShow = await _context.TvShow.FindAsync(id);
+        if (tvShow == null)
+        {
+            return NotFound();
+        }
+        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
+        return View(tvShow);
+    }
+
+    // POST: TvShows/Edit/5
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,WatchDate,RatingId")] TvShow tvShow)
+    {
+        if (id != tvShow.Id)
+        {
+            return NotFound();
+        }
+
+        if (ModelState.IsValid)
+        {
+            try
+            {
+                _context.Update(tvShow);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!TvShowExists(tvShow.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return RedirectToAction(nameof(Index));
+        }
+        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
+        return View(tvShow);
+    }
+
+    // GET: TvShows/Delete/5
+    public async Task<IActionResult> Delete(Guid? id)
+    {
+        if (id == null)
+        {
+            return NotFound();
+        }
+
+        var tvShow = await _context.TvShow
+            .Include(t => t.Rating)
+            .FirstOrDefaultAsync(m => m.Id == id);
+        if (tvShow == null)
+        {
+            return NotFound();
+        }
+
+        return View(tvShow);
+    }
+
+    // POST: TvShows/Delete/5
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(Guid id)
+    {
+        var tvShow = await _context.TvShow.FindAsync(id);
+        if (tvShow != null)
+        {
+            _context.TvShow.Remove(tvShow);
+        }
+
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
+    }
+
+    private bool TvShowExists(Guid id)
+    {
+        return _context.TvShow.Any(e => e.Id == id);
     }
 }
