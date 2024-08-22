@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WatchList.Web.Data;
 using WatchList.Web.Models;
 
@@ -15,10 +16,6 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        ViewData["MoviesCount"] = _context.Movie.Count();
-        ViewData["TvShowsCount"] = _context.TvShow.Count();
-        ViewData["TheatricalPerformancesCount"] = _context.TheatricalPerformance.Count();
-
         return View();
     }
 
