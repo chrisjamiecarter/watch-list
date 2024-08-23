@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace WatchList.Web.Models;
 
@@ -10,5 +11,6 @@ public class MovieView
 
     public Rating? Rating { get; set; }
 
+    [Display(Name = "Search")]
     public string? SearchString { get; set; }
 }
