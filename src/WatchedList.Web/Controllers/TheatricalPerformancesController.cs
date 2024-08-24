@@ -16,7 +16,7 @@ public class TheatricalPerformancesController : Controller
     }
 
     // GET: TheatricalPerformances
-    public async Task<IActionResult> Index(int rating, string searchString)
+    public async Task<IActionResult> Index(int rating, string searchString, string sortOrder)
     {
         if (_context.TheatricalPerformance is null)
         {
@@ -42,7 +42,24 @@ public class TheatricalPerformancesController : Controller
             Ratings = new SelectList(await ratings.OrderBy(o => o.Id).ToListAsync(), "Id", "Name")
         };
 
-        //model.TheatricalPerformances = model.TheatricalPerformances.Where(r => r.Rating!.Id == rating).ToList();
+        model.RatingId = rating;
+        model.SearchString = searchString;
+
+        // Sort:
+        model.CurrentSort = string.IsNullOrEmpty(sortOrder) ? "title_asc" : sortOrder;
+        model.TitleSort = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+        model.WatchDateSort = sortOrder == "watchdate_asc" ? "watchdate_desc" : "watchdate_asc";
+        model.RatingSort = sortOrder == "rating_asc" ? "rating_desc" : "rating_asc";
+
+        model.TheatricalPerformances = sortOrder switch
+        {
+            "title_desc" => model.TheatricalPerformances.OrderByDescending(o => o.Title).ToList(),
+            "watchdate_asc" => model.TheatricalPerformances.OrderBy(o => o.WatchDate).ToList(),
+            "watchdate_desc" => model.TheatricalPerformances.OrderByDescending(o => o.WatchDate).ToList(),
+            "rating_asc" => model.TheatricalPerformances.OrderBy(o => o.RatingId).ToList(),
+            "rating_desc" => model.TheatricalPerformances.OrderByDescending(o => o.RatingId).ToList(),
+            _ => model.TheatricalPerformances.OrderBy(o => o.Title).ToList(),
+        };
 
         return View(model);
     }

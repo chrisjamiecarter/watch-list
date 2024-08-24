@@ -16,7 +16,7 @@ public class TvShowsController : Controller
     }
 
     // GET: TvShows
-    public async Task<IActionResult> Index(int rating, string searchString)
+    public async Task<IActionResult> Index(int rating, string searchString, string sortOrder)
     {
         if (_context.TvShow is null)
         {
@@ -40,6 +40,25 @@ public class TvShowsController : Controller
         {
             TvShows = await tvShows.ToListAsync(),
             Ratings = new SelectList(await ratings.OrderBy(o => o.Id).ToListAsync(), "Id", "Name")
+        };
+
+        model.RatingId = rating;
+        model.SearchString = searchString;
+
+        // Sort:
+        model.CurrentSort = string.IsNullOrEmpty(sortOrder) ? "title_asc" : sortOrder;
+        model.TitleSort = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
+        model.WatchDateSort = sortOrder == "watchdate_asc" ? "watchdate_desc" : "watchdate_asc";
+        model.RatingSort = sortOrder == "rating_asc" ? "rating_desc" : "rating_asc";
+
+        model.TvShows = sortOrder switch
+        {
+            "title_desc" => model.TvShows.OrderByDescending(o => o.Title).ToList(),
+            "watchdate_asc" => model.TvShows.OrderBy(o => o.WatchDate).ToList(),
+            "watchdate_desc" => model.TvShows.OrderByDescending(o => o.WatchDate).ToList(),
+            "rating_asc" => model.TvShows.OrderBy(o => o.RatingId).ToList(),
+            "rating_desc" => model.TvShows.OrderByDescending(o => o.RatingId).ToList(),
+            _ => model.TvShows.OrderBy(o => o.Title).ToList(),
         };
 
         return View(model);
