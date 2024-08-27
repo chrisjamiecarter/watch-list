@@ -1,61 +1,70 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using WatchedList.Web.Data;
+using WatchedList.Application.Services;
 using WatchedList.Web.Models;
 
 namespace WatchedList.Web.Controllers;
 
+/// <summary>
+/// Manages the Movie-related actions for the web application layer.
+/// This controller handles the CRUD operations 
+/// and also provides filtering and sorting functionalities.
+/// </summary>
 public class MoviesController : Controller
 {
-    private readonly WatchedListDataContext _context;
+    #region Fields
 
-    public MoviesController(WatchedListDataContext context)
+    private readonly IWatchedListService _service;
+
+    #endregion
+    #region Constructors
+
+    public MoviesController(IWatchedListService service)
     {
-        _context = context;
+        _service = service;
     }
+
+    #endregion
+    #region Methods
 
     // GET: Movies
     public async Task<IActionResult> Index(int rating, string searchString, string sortOrder)
     {
-        if (_context.Movie is null)
-        {
-            return Problem($"Entity set '{nameof(_context.Movie)}' is null.");
-        }
-
-        var ratings = _context.Rating.AsQueryable();
-        var movies = _context.Movie.AsQueryable();
+        var ratings = await _service.GetRatingsAsync();
+        var movies = await _service.GetMoviesAsync();
 
         if (!string.IsNullOrEmpty(searchString))
         {
-            movies = movies.Where(s => s.Title.ToLower().Contains(searchString.ToLower()));
+            //movies = movies.Where(s => s.Title.ToLower().Contains(searchString.ToLower())).ToList();
+            movies = movies.Where(s => s.Title.Contains(searchString, StringComparison.CurrentCultureIgnoreCase)).ToList();
         }
 
         if (rating > 0)
         {
-            movies = movies.Where(r => r.Rating!.Id == rating);
+            movies = movies.Where(r => r.Rating!.Id == rating).ToList();
         }
 
-        var model = new MovieView
+        var model = new MovieViewModel
         {
-            Movies = await movies.ToListAsync(),
-            Ratings = new SelectList(await ratings.OrderBy(o => o.Id).ToListAsync(), "Id", "Name")
+            Movies = movies.Select(x => new MovieDto(x)).ToList(),
+            Ratings = new SelectList(ratings.Select(x => new RatingDto(x)).OrderBy(o => o.Id).ToList(), "Id", "Name"),
+
+            // Filter:
+            RatingId = rating,
+            SearchString = searchString,
+
+            // Sort:
+            CurrentSort = string.IsNullOrEmpty(sortOrder) ? "title_asc" : sortOrder,
+            TitleSort = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "",
+            WatchDateSort = sortOrder == "watched_asc" ? "watched_desc" : "watched_asc",
+            RatingSort = sortOrder == "rating_asc" ? "rating_desc" : "rating_asc"
         };
-
-        model.RatingId = rating;
-        model.SearchString = searchString;
-
-        // Sort:
-        model.CurrentSort = string.IsNullOrEmpty(sortOrder) ? "title_asc" : sortOrder;
-        model.TitleSort = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
-        model.WatchDateSort = sortOrder == "watchdate_asc" ? "watchdate_desc" : "watchdate_asc";
-        model.RatingSort = sortOrder == "rating_asc" ? "rating_desc" : "rating_asc";
 
         model.Movies = sortOrder switch
         {
             "title_desc" => model.Movies.OrderByDescending(o => o.Title).ToList(),
-            "watchdate_asc" => model.Movies.OrderBy(o => o.WatchDate).ToList(),
-            "watchdate_desc" => model.Movies.OrderByDescending(o => o.WatchDate).ToList(),
+            "watched_asc" => model.Movies.OrderBy(o => o.WatchedDate).ToList(),
+            "watched_desc" => model.Movies.OrderByDescending(o => o.WatchedDate).ToList(),
             "rating_asc" => model.Movies.OrderBy(o => o.RatingId).ToList(),
             "rating_desc" => model.Movies.OrderByDescending(o => o.RatingId).ToList(),
             _ => model.Movies.OrderBy(o => o.Title).ToList(),
@@ -65,9 +74,9 @@ public class MoviesController : Controller
     }
 
     // GET: Movies/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name");
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name");
         return View();
     }
 
@@ -76,16 +85,17 @@ public class MoviesController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,Title,WatchDate,RatingId")] Movie movie)
+    public async Task<IActionResult> Create([Bind("Id,Title,WatchedDate,RatingId")] MovieDto movie)
     {
         if (ModelState.IsValid)
         {
-            movie.Id = Guid.NewGuid();
-            _context.Add(movie);
-            await _context.SaveChangesAsync();
+            var rating = await _service.GetRatingAsync(movie.RatingId);
+            movie.Rating = new RatingDto(rating);
+            await _service.AddMovieAsync(movie.MapToDomain());
             return RedirectToAction(nameof(Index));
         }
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", movie.RatingId);
+
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name", movie.RatingId);
         return View(movie);
     }
 
@@ -97,13 +107,15 @@ public class MoviesController : Controller
             return NotFound();
         }
 
-        var movie = await _context.Movie.FindAsync(id);
+        var movie = await _service.GetMovieAsync(id.Value);
         if (movie == null)
         {
             return NotFound();
         }
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", movie.RatingId);
-        return View(movie);
+
+        var model = new MovieDto(movie);
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name", movie.Rating.Id);
+        return View(model);
     }
 
     // POST: Movies/Edit/5
@@ -111,7 +123,7 @@ public class MoviesController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,WatchDate,RatingId")] Movie movie)
+    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,WatchedDate,RatingId")] MovieDto movie)
     {
         if (id != movie.Id)
         {
@@ -120,25 +132,13 @@ public class MoviesController : Controller
 
         if (ModelState.IsValid)
         {
-            try
-            {
-                _context.Update(movie);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!MovieExists(movie.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            var rating = await _service.GetRatingAsync(movie.RatingId);
+            movie.Rating = new RatingDto(rating);
+            await _service.UpdateMovieAsync(movie.MapToDomain());
             return RedirectToAction(nameof(Index));
         }
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", movie.RatingId);
+
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name", movie.RatingId);
         return View(movie);
     }
 
@@ -150,15 +150,14 @@ public class MoviesController : Controller
             return NotFound();
         }
 
-        var movie = await _context.Movie
-            .Include(m => m.Rating)
-            .FirstOrDefaultAsync(m => m.Id == id);
+        var movie = await _service.GetMovieAsync(id.Value);
         if (movie == null)
         {
             return NotFound();
         }
 
-        return View(movie);
+        var model = new MovieDto(movie);
+        return View(model);
     }
 
     // POST: Movies/Delete/5
@@ -166,18 +165,9 @@ public class MoviesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
-        var movie = await _context.Movie.FindAsync(id);
-        if (movie != null)
-        {
-            _context.Movie.Remove(movie);
-        }
-
-        await _context.SaveChangesAsync();
+        await _service.DeleteMovieAsync(id);
         return RedirectToAction(nameof(Index));
     }
 
-    private bool MovieExists(Guid id)
-    {
-        return _context.Movie.Any(e => e.Id == id);
-    }
+    #endregion
 }

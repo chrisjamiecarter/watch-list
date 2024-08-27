@@ -3,20 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using WatchedList.Web.Data;
+using WatchedList.Infrastructure.Contexts;
 
 #nullable disable
 
-namespace WatchedList.Web.Migrations
+namespace WatchedList.Infrastructure.Migrations
 {
     [DbContext(typeof(WatchedListDataContext))]
-    [Migration("20240824100131_InitalCreate")]
-    partial class InitalCreate
+    partial class WatchedListDataContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +22,7 @@ namespace WatchedList.Web.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("WatchedList.Web.Models.Movie", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.Movie", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -38,7 +35,7 @@ namespace WatchedList.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("WatchDate")
+                    b.Property<DateTime>("WatchedDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -48,7 +45,7 @@ namespace WatchedList.Web.Migrations
                     b.ToTable("Movie");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.Rating", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.Rating", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -65,7 +62,7 @@ namespace WatchedList.Web.Migrations
                     b.ToTable("Rating");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.TheatricalPerformance", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.TheatricalPerformance", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -78,7 +75,7 @@ namespace WatchedList.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("WatchDate")
+                    b.Property<DateTime>("WatchedDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -88,7 +85,7 @@ namespace WatchedList.Web.Migrations
                     b.ToTable("TheatricalPerformance");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.TvShow", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.TvShow", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -101,7 +98,7 @@ namespace WatchedList.Web.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("WatchDate")
+                    b.Property<DateTime>("WatchedDate")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -111,9 +108,9 @@ namespace WatchedList.Web.Migrations
                     b.ToTable("TvShow");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.Movie", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.Movie", b =>
                 {
-                    b.HasOne("WatchedList.Web.Models.Rating", "Rating")
+                    b.HasOne("WatchedList.Infrastructure.Models.Rating", "Rating")
                         .WithMany("Movies")
                         .HasForeignKey("RatingId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -122,9 +119,9 @@ namespace WatchedList.Web.Migrations
                     b.Navigation("Rating");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.TheatricalPerformance", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.TheatricalPerformance", b =>
                 {
-                    b.HasOne("WatchedList.Web.Models.Rating", "Rating")
+                    b.HasOne("WatchedList.Infrastructure.Models.Rating", "Rating")
                         .WithMany("TheatricalPerformances")
                         .HasForeignKey("RatingId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -133,9 +130,9 @@ namespace WatchedList.Web.Migrations
                     b.Navigation("Rating");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.TvShow", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.TvShow", b =>
                 {
-                    b.HasOne("WatchedList.Web.Models.Rating", "Rating")
+                    b.HasOne("WatchedList.Infrastructure.Models.Rating", "Rating")
                         .WithMany("TvShows")
                         .HasForeignKey("RatingId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -144,7 +141,7 @@ namespace WatchedList.Web.Migrations
                     b.Navigation("Rating");
                 });
 
-            modelBuilder.Entity("WatchedList.Web.Models.Rating", b =>
+            modelBuilder.Entity("WatchedList.Infrastructure.Models.Rating", b =>
                 {
                     b.Navigation("Movies");
 
