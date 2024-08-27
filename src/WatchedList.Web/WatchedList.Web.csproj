@@ -17,10 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\img\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\WatchedList.Application\WatchedList.Application.csproj" />
     <ProjectReference Include="..\WatchedList.Domain\WatchedList.Domain.csproj" />
     <ProjectReference Include="..\WatchedList.Infrastructure\WatchedList.Infrastructure.csproj" />

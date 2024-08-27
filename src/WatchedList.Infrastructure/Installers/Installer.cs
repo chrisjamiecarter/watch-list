@@ -24,6 +24,9 @@ public static class Installer
 
     public static IServiceProvider SeedDatabase(this IServiceProvider serviceProvider)
     {
+        var context = serviceProvider.GetRequiredService<WatchedListDataContext>();
+        context.Database.Migrate();
+
         var repository = serviceProvider.GetRequiredService<IWatchedListRepository>();
         SeederService.SeedDatabase(repository);
 
