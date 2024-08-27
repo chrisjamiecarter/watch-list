@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace WatchedList.Web.Migrations
+namespace WatchedList.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class InitalCreate : Migration
@@ -30,7 +30,7 @@ namespace WatchedList.Web.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    WatchDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    WatchedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RatingId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -50,7 +50,7 @@ namespace WatchedList.Web.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    WatchDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    WatchedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RatingId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -70,7 +70,7 @@ namespace WatchedList.Web.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    WatchDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    WatchedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RatingId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>

@@ -1,61 +1,69 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using WatchedList.Web.Data;
+using WatchedList.Application.Services;
 using WatchedList.Web.Models;
 
 namespace WatchedList.Web.Controllers;
 
+/// <summary>
+/// Manages the TvShow-related actions for the web application layer.
+/// This controller handles the CRUD operations 
+/// and also provides filtering and sorting functionalities.
+/// </summary>
 public class TvShowsController : Controller
 {
-    private readonly WatchedListDataContext _context;
+    #region Fields
 
-    public TvShowsController(WatchedListDataContext context)
+    private readonly IWatchedListService _service;
+
+    #endregion
+    #region Constructors
+
+    public TvShowsController(IWatchedListService service)
     {
-        _context = context;
+        _service = service;
     }
+
+    #endregion
+    #region Methods
 
     // GET: TvShows
     public async Task<IActionResult> Index(int rating, string searchString, string sortOrder)
     {
-        if (_context.TvShow is null)
-        {
-            return Problem($"Entity set '{nameof(_context.TvShow)}' is null.");
-        }
-
-        var ratings = _context.Rating.AsQueryable();
-        var tvShows = _context.TvShow.AsQueryable();
+        var ratings = await _service.GetRatingsAsync();
+        var tvShows = await _service.GetTvShowsAsync();
 
         if (!string.IsNullOrEmpty(searchString))
         {
-            tvShows = tvShows.Where(s => s.Title.ToLower().Contains(searchString.ToLower()));
+            tvShows = tvShows.Where(s => s.Title.Contains(searchString, StringComparison.CurrentCultureIgnoreCase)).ToList();
         }
 
         if (rating > 0)
         {
-            tvShows = tvShows.Where(r => r.Rating!.Id == rating);
+            tvShows = tvShows.Where(r => r.Rating!.Id == rating).ToList();
         }
 
-        var model = new TvShowView
+        var model = new TvShowViewModel
         {
-            TvShows = await tvShows.ToListAsync(),
-            Ratings = new SelectList(await ratings.OrderBy(o => o.Id).ToListAsync(), "Id", "Name")
+            TvShows = tvShows.Select(x => new TvShowDto(x)).ToList(),
+            Ratings = new SelectList(ratings.Select(x => new RatingDto(x)).OrderBy(o => o.Id).ToList(), "Id", "Name"),
+
+            // Filter:
+            RatingId = rating,
+            SearchString = searchString,
+
+            // Sort:
+            CurrentSort = string.IsNullOrEmpty(sortOrder) ? "title_asc" : sortOrder,
+            TitleSort = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "",
+            WatchDateSort = sortOrder == "watched_asc" ? "watched_desc" : "watched_asc",
+            RatingSort = sortOrder == "rating_asc" ? "rating_desc" : "rating_asc"
         };
-
-        model.RatingId = rating;
-        model.SearchString = searchString;
-
-        // Sort:
-        model.CurrentSort = string.IsNullOrEmpty(sortOrder) ? "title_asc" : sortOrder;
-        model.TitleSort = string.IsNullOrEmpty(sortOrder) ? "title_desc" : "";
-        model.WatchDateSort = sortOrder == "watchdate_asc" ? "watchdate_desc" : "watchdate_asc";
-        model.RatingSort = sortOrder == "rating_asc" ? "rating_desc" : "rating_asc";
 
         model.TvShows = sortOrder switch
         {
             "title_desc" => model.TvShows.OrderByDescending(o => o.Title).ToList(),
-            "watchdate_asc" => model.TvShows.OrderBy(o => o.WatchDate).ToList(),
-            "watchdate_desc" => model.TvShows.OrderByDescending(o => o.WatchDate).ToList(),
+            "watched_asc" => model.TvShows.OrderBy(o => o.WatchedDate).ToList(),
+            "watched_desc" => model.TvShows.OrderByDescending(o => o.WatchedDate).ToList(),
             "rating_asc" => model.TvShows.OrderBy(o => o.RatingId).ToList(),
             "rating_desc" => model.TvShows.OrderByDescending(o => o.RatingId).ToList(),
             _ => model.TvShows.OrderBy(o => o.Title).ToList(),
@@ -65,9 +73,9 @@ public class TvShowsController : Controller
     }
 
     // GET: TvShows/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name");
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name");
         return View();
     }
 
@@ -76,16 +84,17 @@ public class TvShowsController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Id,Title,WatchDate,RatingId")] TvShow tvShow)
+    public async Task<IActionResult> Create([Bind("Id,Title,WatchedDate,RatingId")] TvShowDto tvShow)
     {
         if (ModelState.IsValid)
         {
-            tvShow.Id = Guid.NewGuid();
-            _context.Add(tvShow);
-            await _context.SaveChangesAsync();
+            var rating = await _service.GetRatingAsync(tvShow.RatingId);
+            tvShow.Rating = new RatingDto(rating);
+            await _service.AddTvShowAsync(tvShow.MapToDomain());
             return RedirectToAction(nameof(Index));
         }
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
+
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name", tvShow.RatingId);
         return View(tvShow);
     }
 
@@ -97,13 +106,15 @@ public class TvShowsController : Controller
             return NotFound();
         }
 
-        var tvShow = await _context.TvShow.FindAsync(id);
+        var tvShow = await _service.GetTvShowAsync(id.Value);
         if (tvShow == null)
         {
             return NotFound();
         }
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
-        return View(tvShow);
+
+        var model = new TvShowDto(tvShow);
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name", tvShow.Rating.Id);
+        return View(model);
     }
 
     // POST: TvShows/Edit/5
@@ -111,7 +122,7 @@ public class TvShowsController : Controller
     // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,WatchDate,RatingId")] TvShow tvShow)
+    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,WatchedDate,RatingId")] TvShowDto tvShow)
     {
         if (id != tvShow.Id)
         {
@@ -120,25 +131,13 @@ public class TvShowsController : Controller
 
         if (ModelState.IsValid)
         {
-            try
-            {
-                _context.Update(tvShow);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TvShowExists(tvShow.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            var rating = await _service.GetRatingAsync(tvShow.RatingId);
+            tvShow.Rating = new RatingDto(rating);
+            await _service.UpdateTvShowAsync(tvShow.MapToDomain());
             return RedirectToAction(nameof(Index));
         }
-        ViewData["RatingId"] = new SelectList(_context.Set<Rating>(), "Id", "Name", tvShow.RatingId);
+
+        ViewData["RatingId"] = new SelectList(await _service.GetRatingsAsync(), "Id", "Name", tvShow.RatingId);
         return View(tvShow);
     }
 
@@ -150,15 +149,14 @@ public class TvShowsController : Controller
             return NotFound();
         }
 
-        var tvShow = await _context.TvShow
-            .Include(t => t.Rating)
-            .FirstOrDefaultAsync(m => m.Id == id);
+        var tvShow = await _service.GetTvShowAsync(id.Value);
         if (tvShow == null)
         {
             return NotFound();
         }
 
-        return View(tvShow);
+        var model = new TvShowDto(tvShow);
+        return View(model);
     }
 
     // POST: TvShows/Delete/5
@@ -166,18 +164,9 @@ public class TvShowsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
-        var tvShow = await _context.TvShow.FindAsync(id);
-        if (tvShow != null)
-        {
-            _context.TvShow.Remove(tvShow);
-        }
-
-        await _context.SaveChangesAsync();
+        await _service.DeleteTvShowAsync(id);
         return RedirectToAction(nameof(Index));
     }
 
-    private bool TvShowExists(Guid id)
-    {
-        return _context.TvShow.Any(e => e.Id == id);
-    }
+    #endregion
 }

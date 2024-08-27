@@ -12,11 +12,18 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.4" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="wwwroot\img\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WatchedList.Application\WatchedList.Application.csproj" />
+    <ProjectReference Include="..\WatchedList.Domain\WatchedList.Domain.csproj" />
+    <ProjectReference Include="..\WatchedList.Infrastructure\WatchedList.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

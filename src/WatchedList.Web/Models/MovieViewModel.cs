@@ -3,13 +3,18 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace WatchedList.Web.Models;
 
-public class TvShowView
+/// <summary>
+/// Represents the view model used to display a list of movie objects in the web application layer.
+/// </summary>
+public class MovieViewModel
 {
-    public List<TvShow>? TvShows { get; set; }
+    #region Properties
+
+    public List<MovieDto>? Movies { get; set; }
 
     public SelectList? Ratings { get; set; }
 
-    public Rating? Rating { get; set; }
+    public RatingDto? Rating { get; set; }
 
     public int? RatingId { get; set; }
 
@@ -23,4 +28,6 @@ public class TvShowView
     public string? WatchDateSort { get; set; }
 
     public string? RatingSort { get; set; }
+
+    #endregion
 }

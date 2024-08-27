@@ -1,19 +1,16 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using WatchedList.Web.Data;
 using WatchedList.Web.Models;
 
 namespace WatchedList.Web.Controllers;
+
+/// <summary>
+/// Manages the home page and error handling for the WatchedList web application. 
+/// This controller handles the basic navigation and presentation logic for the home page 
+/// and provides an error view for unexpected issues.
+/// </summary>
 public class HomeController : Controller
 {
-    private readonly WatchedListDataContext _context;
-
-    public HomeController(WatchedListDataContext context)
-    {
-        _context = context;
-    }
-
     public IActionResult Index()
     {
         return View();
